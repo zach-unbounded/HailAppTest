@@ -9,9 +9,17 @@
 #import "HLTableViewController.h"
 #import "HLAppDelegate.h"
 
+static NSString * const HLTableRelaodNotificationName = @"placesHasBeenUpdated";
+static NSString * const HLTableViewTitle = @"Restaurant List";
+static NSString * const HLCellIdentifiyer = @"Cell";
+static NSString * const HLPlaceNameKey = @"name";
+static NSString * const HLPlaceVicinityKey = @"vicinity";
+
+static CGFloat const HLTableViewCellHight = 71.0f;
+
 @interface HLTableViewController  ()
 
-@property (weak,nonatomic) HLAppDelegate* delegate;
+@property (assign,nonatomic) HLAppDelegate* delegate;
 
 @end
 
@@ -20,11 +28,16 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(reloadTable) name:@"placesHasBeenUpdated" object:nil];
-    self.title = @"Restaurant List";
-    _delegate = [[UIApplication sharedApplication] delegate];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(reloadTable)
+                                                 name:HLTableRelaodNotificationName
+                                               object:nil];
+    self.title = HLTableViewTitle;
+    self.delegate = (HLAppDelegate*)[[UIApplication sharedApplication] delegate];
     
-    UIBarButtonItem * button = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh target:self action:@selector(refreshRequest)];
+    UIBarButtonItem * button = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh
+                                                                            target:self
+                                                                            action:@selector(refreshRequest)];
     self.navigationItem.rightBarButtonItem = button;
 }
 
@@ -41,44 +54,34 @@
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
 }
 
 #pragma mark - Table view data source
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    // Return the number of rows in the section.
     return [_delegate.restaurants count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *CellIdentifier = @"Cell";
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier forIndexPath:indexPath];
-    
-    // Configure the cell...
-    
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:HLCellIdentifiyer forIndexPath:indexPath];
     NSDictionary* place = [_delegate.restaurants objectAtIndex:indexPath.row];
-    
-    NSString * name = [place objectForKey:@"name"];
-    
-    NSString * vicinity = [place objectForKey:@"vicinity"];
-    
+    NSString * name = [place objectForKey:HLPlaceNameKey];
+    NSString * vicinity = [place objectForKey:HLPlaceVicinityKey];
     [cell.textLabel setText:name];
     [cell.detailTextLabel setText:vicinity];
-    
     return cell;
 }
 
 -(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return 71;
+    return HLTableViewCellHight;
 }
 
 -(UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section
 {
-    return [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 0)];
+    return [[UIView alloc] initWithFrame:CGRectMake(HLZero, HLZero, self.view.bounds.size.width, HLZero)];
 }
 
 @end

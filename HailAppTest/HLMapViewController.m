@@ -10,9 +10,22 @@
 #import "HLMapPoint.h"
 #import "HLAppDelegate.h"
 
+static NSString * const HLMapViewTitle = @"Restaurant Map";
+
+
+static NSString * const HLGoogleLocationServiceGeometryKey = @"geometry";
+static NSString * const HLGoogleLocationServiceLocationKey = @"location";
+static NSString * const HLGoogleLocationServiceNameKey = @"name";
+static NSString * const HLGoogleLocationServiceVicinityKey = @"vicinity";
+static NSString * const HLGoogleLocationServiceLatitudeKey = @"lat";
+static NSString * const HLGoogleLocationServiceLongitudeKey = @"lng";
+
+static CLLocationDistance const HLLatitudeSpan = 10000.0f;
+static CLLocationDistance const HLLongitudeSpan = 10000.0f;
+
 @interface HLMapViewController ()
 
-@property (strong,nonatomic) CLLocationManager * locationManager;
+@property (assign,nonatomic) HLAppDelegate* delegate;
 
 @end
 
@@ -22,7 +35,7 @@
 {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
-        // Custom initialization
+        _delegate = (HLAppDelegate*)[[UIApplication sharedApplication] delegate];
     }
     return self;
 }
@@ -30,70 +43,63 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-	// Do any additional setup after loading the view.
-    
-    UIBarButtonItem * button = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh target:self action:@selector(refreshRequest)];
+    UIBarButtonItem * button = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh
+                                                                            target:self
+                                                                            action:@selector(refreshRequest)];
     self.navigationItem.rightBarButtonItem = button;
-    self.title = @"Restaurant Map";
-    
-    _locationManager = [[CLLocationManager alloc]init];
-    _locationManager.delegate = self;
+    self.title = HLMapViewTitle;
+    [self.mapView setCenterCoordinate:self.mapView.userLocation.location.coordinate animated:YES];
+    [self plotPositions:self.delegate.restaurants];
+}
 
-    [_mapView setCenterCoordinate:_mapView.userLocation.location.coordinate animated:YES];
-    
-    HLAppDelegate* delegate = [[UIApplication sharedApplication] delegate];
-    [self plotPositions:delegate.restaurants];
-
+-(void)viewDidAppear:(BOOL)animated {
+    self.delegate.locationManager.delegate = self;
+}
+-(void)viewDidDisappear:(BOOL)animated {
+    self.delegate.locationManager.delegate = self.delegate;
 }
 
 -(void)refreshRequest
 {
-    HLAppDelegate* delegate = [[UIApplication sharedApplication] delegate];
-    [delegate.locationManager startUpdatingLocation];
+    [self.delegate.locationManager startUpdatingLocation];
 }
 
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
 }
 
 #pragma mark - MKMapViewDelegate methods.
-- (void)mapView:(MKMapView *)mv didAddAnnotationViews:(NSArray *)views {
+
+- (void)mapView:(MKMapView *)mv didAddAnnotationViews:(NSArray *)views
+{
     MKCoordinateRegion region;
-    region = MKCoordinateRegionMakeWithDistance(_locationManager.location.coordinate,10000,10000);
-    
-    
+    region = MKCoordinateRegionMakeWithDistance(self.delegate.locationManager.location.coordinate,
+                                                HLLatitudeSpan,
+                                                HLLongitudeSpan);
     [mv setRegion:region animated:YES];
 }
 
-
--(void)plotPositions:(NSArray *)data {
-    // 1 - Remove any existing custom annotations but not the user location blue dot.
+-(void)plotPositions:(NSArray *)data
+{
     for (id<MKAnnotation> annotation in self.mapView.annotations) {
         if ([annotation isKindOfClass:[HLMapPoint class]]) {
             [self.mapView removeAnnotation:annotation];
         }
     }
-    // 2 - Loop through the array of places returned from the Google API.
-    for (int i=0; i<[data count]; i++) {
-        //Retrieve the NSDictionary object in each index of the array.
-        NSDictionary* place = [data objectAtIndex:i];
-        // 3 - There is a specific NSDictionary object that gives us the location info.
-        NSDictionary *geo = [place objectForKey:@"geometry"];
-        // Get the lat and long for the location.
-        NSDictionary *loc = [geo objectForKey:@"location"];
-        // 4 - Get your name and address info for adding to a pin.
-        NSString *name=[place objectForKey:@"name"];
-        NSString *vicinity=[place objectForKey:@"vicinity"];
-        // Create a special variable to hold this coordinate info.
+    for (NSDictionary* place in data) {
+        NSDictionary *geo = [place objectForKey:HLGoogleLocationServiceGeometryKey];
+        NSDictionary *loc = [geo objectForKey:HLGoogleLocationServiceLocationKey];
+        NSString *name=[place objectForKey:HLGoogleLocationServiceNameKey];
+        NSString *vicinity=[place objectForKey:HLGoogleLocationServiceVicinityKey];
         CLLocationCoordinate2D placeCoord;
-        // Set the lat and long.
-        placeCoord.latitude=[[loc objectForKey:@"lat"] doubleValue];
-        placeCoord.longitude=[[loc objectForKey:@"lng"] doubleValue];
-        // 5 - Create a new annotation.
-        HLMapPoint *placeObject = [[HLMapPoint alloc] initWithName:name address:vicinity coordinate:placeCoord];
+        placeCoord.latitude=[[loc objectForKey:HLGoogleLocationServiceLatitudeKey] doubleValue];
+        placeCoord.longitude=[[loc objectForKey:HLGoogleLocationServiceLongitudeKey] doubleValue];
+        HLMapPoint *placeObject = [HLMapPoint HLMapPointWithName:name
+                                                         address:vicinity
+                                                      coordinate:placeCoord];
         [self.mapView addAnnotation:placeObject];
     }
 }
+
 @end

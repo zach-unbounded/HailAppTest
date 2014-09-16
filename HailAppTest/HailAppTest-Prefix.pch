@@ -14,4 +14,5 @@
     #import <UIKit/UIKit.h>
     #import <Foundation/Foundation.h>
     #import <CoreData/CoreData.h>
+    static CGFloat const HLZero = 0.0f;
 #endif
