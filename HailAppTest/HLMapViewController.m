@@ -11,6 +11,7 @@
 #import "HLAppDelegate.h"
 
 static NSString * const HLMapViewTitle = @"Restaurant Map";
+static NSString * const HLMapRelaodNotificationName = @"placesHasBeenUpdated";
 
 
 static NSString * const HLGoogleLocationServiceGeometryKey = @"geometry";
@@ -20,8 +21,8 @@ static NSString * const HLGoogleLocationServiceVicinityKey = @"vicinity";
 static NSString * const HLGoogleLocationServiceLatitudeKey = @"lat";
 static NSString * const HLGoogleLocationServiceLongitudeKey = @"lng";
 
-static CLLocationDistance const HLLatitudeSpan = 10000.0f;
-static CLLocationDistance const HLLongitudeSpan = 10000.0f;
+static CLLocationDistance const HLLatitudeSpan = 1000.0f;
+static CLLocationDistance const HLLongitudeSpan = 1000.0f;
 
 @interface HLMapViewController ()
 
@@ -35,7 +36,6 @@ static CLLocationDistance const HLLongitudeSpan = 10000.0f;
 {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
-        _delegate = (HLAppDelegate*)[[UIApplication sharedApplication] delegate];
     }
     return self;
 }
@@ -43,6 +43,12 @@ static CLLocationDistance const HLLongitudeSpan = 10000.0f;
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    self.delegate = (HLAppDelegate*)[[UIApplication sharedApplication] delegate];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(reloadMap)
+                                                 name:HLMapRelaodNotificationName
+                                               object:nil];
+    
     UIBarButtonItem * button = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh
                                                                             target:self
                                                                             action:@selector(refreshRequest)];
@@ -52,12 +58,6 @@ static CLLocationDistance const HLLongitudeSpan = 10000.0f;
     [self plotPositions:self.delegate.restaurants];
 }
 
--(void)viewDidAppear:(BOOL)animated {
-    self.delegate.locationManager.delegate = self;
-}
--(void)viewDidDisappear:(BOOL)animated {
-    self.delegate.locationManager.delegate = self.delegate;
-}
 
 -(void)refreshRequest
 {
@@ -78,6 +78,14 @@ static CLLocationDistance const HLLongitudeSpan = 10000.0f;
                                                 HLLatitudeSpan,
                                                 HLLongitudeSpan);
     [mv setRegion:region animated:YES];
+}
+
+-(void)reloadMap
+{
+    if (self.isBeingPresented) {
+        [self.mapView setCenterCoordinate:self.mapView.userLocation.location.coordinate animated:YES];
+        [self plotPositions:self.delegate.restaurants];
+    }
 }
 
 -(void)plotPositions:(NSArray *)data

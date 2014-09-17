@@ -66,7 +66,7 @@ static CGFloat const HLTableViewCellHight = 71.0f;
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:HLCellIdentifiyer forIndexPath:indexPath];
-    NSDictionary* place = [_delegate.restaurants objectAtIndex:indexPath.row];
+    NSDictionary* place = [self.delegate.restaurants objectAtIndex:indexPath.row];
     NSString * name = [place objectForKey:HLPlaceNameKey];
     NSString * vicinity = [place objectForKey:HLPlaceVicinityKey];
     [cell.textLabel setText:name];
