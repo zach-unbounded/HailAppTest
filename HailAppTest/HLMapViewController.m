@@ -35,8 +35,6 @@ static CLLocationDistance const HLLongitudeSpan = 1000.0f;
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-    if (self) {
-    }
     return self;
 }
 
